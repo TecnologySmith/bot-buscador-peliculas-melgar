@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from openpyxl import load_workbook
 import os
+import re
 
 api_id = 23820344
 api_hash = 'df4339ef81253bad2463a65ae5b7b300'
@@ -12,6 +13,10 @@ excel_file = "canales_creados.xlsx"
 
 user_results = {}
 user_indexes = {}
+
+def generar_subconsultas(query):
+    query = re.sub(r"[^\w\s]", "", query)
+    return query.lower().split()
 
 @app.on_message(filters.text & (filters.private | filters.group | filters.channel))
 def buscar_pelicula(client, message):
@@ -33,19 +38,22 @@ def buscar_pelicula(client, message):
     ws = wb.active
 
     results = []
+    palabras = generar_subconsultas(query)
+
     for row in ws.iter_rows(min_row=2, values_only=True):
         nombre, enlace, genero, imagen_url, mensaje = row[:5]
-        if query in str(nombre).lower() or query in str(genero).lower() or query in str(mensaje).lower():
-            results.append({
-                "nombre": nombre,
-                "enlace": enlace,
-                "imagen_url": imagen_url
-            })
+        texto_busqueda = f"{nombre} {genero} {mensaje}".lower()
+
+        if query in texto_busqueda:
+            results.append({"nombre": nombre, "enlace": enlace, "imagen_url": imagen_url})
+        elif not results and any(p in texto_busqueda for p in palabras):
+            results.append({"nombre": nombre, "enlace": enlace, "imagen_url": imagen_url})
+
         if len(results) >= 20:
             break
 
     if not results:
-        message.reply("❌ No se encontraron resultados.")
+        message.reply("❌ No se encontraron resultados ni similares.")
         return
 
     user_results[user_id] = results
@@ -65,8 +73,8 @@ def enviar_resultados(client, chat_id, user_id):
         ])
         try:
             client.send_photo(chat_id, photo=res['imagen_url'], caption=texto, reply_markup=botones)
-        except Exception as e:
-            client.send_message(chat_id, f"{texto}\n⚠️.")
+        except Exception:
+            client.send_message(chat_id, f"{texto}\n⚠️")
 
     user_indexes[user_id] = next_index
 
@@ -76,7 +84,6 @@ def enviar_resultados(client, chat_id, user_id):
         ])
         client.send_message(chat_id, "¿Quieres ver más resultados?", reply_markup=botones)
     else:
-        # Último mensaje con botón al sitio web
         sitio = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Ir al sitio web", url="https://tecnologysmith.github.io/Peliculas_Melgar.html")]
         ])
