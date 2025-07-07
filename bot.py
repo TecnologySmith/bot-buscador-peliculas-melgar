@@ -2,7 +2,6 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from openpyxl import load_workbook
 import os
-import re
 
 api_id = 23820344
 api_hash = 'df4339ef81253bad2463a65ae5b7b300'
@@ -13,10 +12,6 @@ excel_file = "canales_creados.xlsx"
 
 user_results = {}
 user_indexes = {}
-
-def generar_subconsultas(query):
-    query = re.sub(r"[^\w\s]", "", query)
-    return query.lower().split()
 
 @app.on_message(filters.text & (filters.private | filters.group | filters.channel))
 def buscar_pelicula(client, message):
@@ -37,26 +32,40 @@ def buscar_pelicula(client, message):
     wb = load_workbook(excel_file)
     ws = wb.active
 
-    results = []
-    palabras = generar_subconsultas(query)
+    palabras = query.split()
+    resultados = []
+    encontrados_directos = False
 
     for row in ws.iter_rows(min_row=2, values_only=True):
         nombre, enlace, genero, imagen_url, mensaje = row[:5]
-        texto_busqueda = f"{nombre} {genero} {mensaje}".lower()
+        texto = f"{nombre} {genero} {mensaje}".lower()
 
-        if query in texto_busqueda:
-            results.append({"nombre": nombre, "enlace": enlace, "imagen_url": imagen_url})
-        elif not results and any(p in texto_busqueda for p in palabras):
-            results.append({"nombre": nombre, "enlace": enlace, "imagen_url": imagen_url})
+        if query in texto:
+            resultados.append({
+                "nombre": nombre,
+                "enlace": enlace,
+                "imagen_url": imagen_url
+            })
+            encontrados_directos = True
 
-        if len(results) >= 20:
-            break
+    if not encontrados_directos:
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            nombre, enlace, genero, imagen_url, mensaje = row[:5]
+            texto = f"{nombre} {genero} {mensaje}".lower()
 
-    if not results:
-        message.reply("❌ No se encontraron resultados ni similares.")
+            if any(palabra in texto for palabra in palabras):
+                if not any(r["nombre"] == nombre for r in resultados):
+                    resultados.append({
+                        "nombre": nombre,
+                        "enlace": enlace,
+                        "imagen_url": imagen_url
+                    })
+
+    if not resultados:
+        message.reply("❌ No se encontraron resultados.")
         return
 
-    user_results[user_id] = results
+    user_results[user_id] = resultados[:20]  # máximo 20 resultados
     user_indexes[user_id] = 0
     enviar_resultados(client, message.chat.id, user_id)
 
@@ -73,8 +82,8 @@ def enviar_resultados(client, chat_id, user_id):
         ])
         try:
             client.send_photo(chat_id, photo=res['imagen_url'], caption=texto, reply_markup=botones)
-        except Exception:
-            client.send_message(chat_id, f"{texto}\n⚠️")
+        except Exception as e:
+            client.send_message(chat_id, f"{texto}\n⚠️ Imagen no disponible.")
 
     user_indexes[user_id] = next_index
 
