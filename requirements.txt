@@ -1,4 +1,3 @@
 pyrogram
 tgcrypto
-gspread
-oauth2client
+openpyxl
