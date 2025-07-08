@@ -1,14 +1,27 @@
+import os
+import json
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from openpyxl import load_workbook
-import os
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-api_id = 23820344
-api_hash = 'df4339ef81253bad2463a65ae5b7b300'
-bot_token = "7394299007:AAF-Fjh0xtEDDx862APrFGDz8wQI7Dizb3I"
+# Configuración del bot de Telegram
+api_id = int(os.environ["API_ID"])  # ejemplo: 12345678
+api_hash = os.environ["API_HASH"]   # ejemplo: 'abcd1234...'
+bot_token = os.environ["BOT_TOKEN"] # ejemplo: '123:ABC...'
 
 app = Client("bot_busqueda_avanzado", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
-excel_file = "canales_creados.xlsx"
+
+# Conexión con Google Sheets usando variable de entorno
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+cred_json = os.environ["GOOGLE_CREDENTIALS_JSON"]
+cred_dict = json.loads(cred_json)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
+client_gs = gspread.authorize(creds)
+
+# ID de la hoja de cálculo
+SPREADSHEET_ID = "1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k"
+sheet = client_gs.open_by_key(SPREADSHEET_ID).sheet1
 
 user_results = {}
 user_indexes = {}
@@ -24,19 +37,17 @@ def buscar_pelicula(client, message):
         return
 
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
-
-    if not os.path.exists(excel_file):
-        message.reply("⚠️ No hay películas registradas.")
-        return
-
-    wb = load_workbook(excel_file)
-    ws = wb.active
-
     palabras = query.split()
     resultados = []
     encontrados_directos = False
 
-    for row in ws.iter_rows(min_row=2, values_only=True):
+    try:
+        rows = sheet.get_all_values()[1:]  # Omitir encabezado
+    except Exception as e:
+        message.reply("⚠️ No se pudo acceder a la hoja de cálculo.")
+        return
+
+    for row in rows:
         nombre, enlace, genero, imagen_url, mensaje = row[:5]
         texto = f"{nombre} {genero} {mensaje}".lower()
 
@@ -49,7 +60,7 @@ def buscar_pelicula(client, message):
             encontrados_directos = True
 
     if not encontrados_directos:
-        for row in ws.iter_rows(min_row=2, values_only=True):
+        for row in rows:
             nombre, enlace, genero, imagen_url, mensaje = row[:5]
             texto = f"{nombre} {genero} {mensaje}".lower()
 
@@ -65,7 +76,7 @@ def buscar_pelicula(client, message):
         message.reply("❌ No se encontraron resultados.")
         return
 
-    user_results[user_id] = resultados[:20]  # máximo 20 resultados
+    user_results[user_id] = resultados[:20]
     user_indexes[user_id] = 0
     enviar_resultados(client, message.chat.id, user_id)
 
@@ -105,5 +116,5 @@ def ver_mas(client, callback_query: CallbackQuery):
     callback_query.answer()
     enviar_resultados(client, chat_id, user_id)
 
-print("🎬 Bot de búsqueda de películas iniciado.")
+print("🎬 Bot de búsqueda conectado a Google Sheets y listo.")
 app.run()
