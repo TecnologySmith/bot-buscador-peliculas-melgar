@@ -62,9 +62,14 @@ def buscar_pelicula(client, message):
                     })
 
     if not resultados:
-        message.reply("❌ No se encontraron resultados.")
-        return
-
+    message.reply(
+        "⚠️ *Este título no está disponible en el buscador gratuito.*\n\n"
+        "🎁 Accede a más contenido en nuestra web oficial:\n"
+        "🔗 https://tecnologysmith.github.io/Peliculas_Melgar.html\n\n"
+        "*¡Hazte miembro premium y accede a TODO el catálogo mas información en @mr_smithht !*",
+        parse_mode="markdown"
+    )
+    return
     user_results[user_id] = resultados[:20]  # máximo 20 resultados
     user_indexes[user_id] = 0
     enviar_resultados(client, message.chat.id, user_id)
@@ -83,7 +88,7 @@ def enviar_resultados(client, chat_id, user_id):
         try:
             client.send_photo(chat_id, photo=res['imagen_url'], caption=texto, reply_markup=botones)
         except Exception as e:
-            client.send_message(chat_id, f"{texto}\n⚠️ Imagen no disponible.")
+            client.send_message(chat_id, f"{texto}\n⚠️.")
 
     user_indexes[user_id] = next_index
 
