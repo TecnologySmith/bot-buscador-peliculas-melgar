@@ -62,7 +62,7 @@ def buscar_pelicula(client, message):
                     })
 
     if not resultados:
-    message.reply(
+        message.reply(
         "⚠️ *Este título no está disponible en el buscador gratuito.*\n\n"
         "🎁 Accede a más contenido en nuestra web oficial:\n"
         "🔗 https://tecnologysmith.github.io/Peliculas_Melgar.html\n\n"
