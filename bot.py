@@ -63,13 +63,13 @@ def buscar_pelicula(client, message):
 
     if not resultados:
         message.reply(
-        "⚠️ *Este título no está disponible en el buscador gratuito.*\n\n"
-        "🎁 Accede a más contenido en nuestra web oficial:\n"
-        "🔗 https://tecnologysmith.github.io/Peliculas_Melgar.html\n\n"
-        "*¡Hazte miembro premium y accede a TODO el catálogo mas información en @mr_smithht !*",
-        parse_mode="markdown"
-    )
-    return
+            "⚠️ Este título no está disponible en el buscador gratuito.\n\n"
+            "🎁 Accede a más contenido en nuestra web oficial:\n"
+            "🔗 https://tecnologysmith.github.io/Peliculas_Melgar.html\n\n"
+            "¡Hazte miembro premium y accede a TODO el catálogo! o solicita la pelicula por un precio especial, Más información en @mr_smithht"
+        )
+        return
+
     user_results[user_id] = resultados[:20]  # máximo 20 resultados
     user_indexes[user_id] = 0
     enviar_resultados(client, message.chat.id, user_id)
@@ -87,7 +87,7 @@ def enviar_resultados(client, chat_id, user_id):
         ])
         try:
             client.send_photo(chat_id, photo=res['imagen_url'], caption=texto, reply_markup=botones)
-        except Exception as e:
+        except Exception:
             client.send_message(chat_id, f"{texto}\n⚠️.")
 
     user_indexes[user_id] = next_index
@@ -101,7 +101,7 @@ def enviar_resultados(client, chat_id, user_id):
         sitio = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Ir al sitio web", url="https://tecnologysmith.github.io/Peliculas_Melgar.html")]
         ])
-        client.send_message(chat_id, "🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
+        client.send_message(chat_id, "Adquiere un acceso exclusivo a todas las peliculas y series de todas las plataformas de streaming volviendote miembro premium o comprando una pantalla de streaming mas información en @mr_smithht o al whatsapp +573222117202 \n\n 🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
 
 @app.on_callback_query(filters.regex(r"ver_mas_(\d+)"))
 def ver_mas(client, callback_query: CallbackQuery):
