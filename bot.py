@@ -2,10 +2,11 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from openpyxl import load_workbook
 import os
+import re
 
 api_id = 23820344
 api_hash = 'df4339ef81253bad2463a65ae5b7b300'
-bot_token = "7394299007:AAF-Fjh0xtEDDx862APrFGDz8wQI7Dizb3I"
+bot_token = "7394299007:AAH4bRWVvFFj83od7-sRZfYW7d0iebR4eQc"
 
 app = Client("bot_busqueda_avanzado", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 excel_file = "canales_creados.xlsx"
@@ -13,14 +14,24 @@ excel_file = "canales_creados.xlsx"
 user_results = {}
 user_indexes = {}
 
+def limpiar_texto(texto):
+    texto = texto.strip()
+    if "http://" in texto or "https://" in texto:
+        return None
+    if not re.match(r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$', texto):
+        return None
+    return texto.lower()
+
 @app.on_message(filters.text & (filters.private | filters.group | filters.channel))
 def buscar_pelicula(client, message):
     if not message.text.lower().startswith("por favor quiero ver"):
         return
 
-    query = message.text.lower().replace("por favor quiero ver", "").strip()
+    texto_original = message.text.lower().replace("por favor quiero ver", "", 1).strip()
+    query = limpiar_texto(texto_original)
+
     if not query:
-        message.reply("❗ Por favor escribe el nombre de la película después de 'por favor quiero ver'")
+        message.reply("❗ Por favor escribe el nombre de la película sin enlaces ni símbolos extraños después de 'por favor quiero ver'")
         return
 
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
@@ -101,7 +112,7 @@ def enviar_resultados(client, chat_id, user_id):
         sitio = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Ir al sitio web", url="https://tecnologysmith.github.io/Peliculas_Melgar.html")]
         ])
-        client.send_message(chat_id, "Adquiere un acceso exclusivo a todas las peliculas y series de todas las plataformas de streaming volviendote miembro premium o comprando una pantalla de streaming mas información en @mr_smithht o al whatsapp +573222117202 \n\n 🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
+        client.send_message(chat_id, "Adquiere un acceso exclusivo a todas las peliculas y series de todas las plataformas de streaming volviendote miembro premium o comprando una pantalla de streaming más información en @mr_smithht o al whatsapp +573222117202 \n\n 🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
 
 @app.on_callback_query(filters.regex(r"ver_mas_(\d+)"))
 def ver_mas(client, callback_query: CallbackQuery):
