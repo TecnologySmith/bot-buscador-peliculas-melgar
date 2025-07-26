@@ -4,9 +4,10 @@ from openpyxl import load_workbook
 import os
 import re
 
-api_id = 23820344
-api_hash = 'df4339ef81253bad2463a65ae5b7b300'
-bot_token = "7394299007:AAFNKvsy2yeBJC6-Pt5RmXtas58sHrOwPWs"
+# ✅ Usa variables de entorno en lugar de datos sensibles en el código
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
+bot_token = os.getenv("BOT_TOKEN")
 
 app = Client("bot_busqueda_avanzado", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 excel_file = "canales_creados.xlsx"
@@ -81,7 +82,7 @@ def buscar_pelicula(client, message):
         )
         return
 
-    user_results[user_id] = resultados[:20]  # máximo 20 resultados
+    user_results[user_id] = resultados[:20]
     user_indexes[user_id] = 0
     enviar_resultados(client, message.chat.id, user_id)
 
