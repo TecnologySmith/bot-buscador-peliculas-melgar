@@ -5,9 +5,9 @@ import os
 import re
 
 # ✅ Usa variables de entorno en lugar de datos sensibles en el código
-api_id = int(os.getenv("API_ID"))
-api_hash = os.getenv("API_HASH")
-bot_token = os.getenv("BOT_TOKEN")
+api_id = int(os.getenv("api_id"))
+api_hash = os.getenv("api_hash")
+bot_token = os.getenv("bot_token")
 
 app = Client("bot_busqueda_avanzado", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 excel_file = "canales_creados.xlsx"
