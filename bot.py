@@ -6,7 +6,7 @@ import re
 
 api_id = 23820344
 api_hash = 'df4339ef81253bad2463a65ae5b7b300'
-bot_token = "7394299007:AAH4bRWVvFFj83od7-sRZfYW7d0iebR4eQc"
+bot_token = "7394299007:AAFNKvsy2yeBJC6-Pt5RmXtas58sHrOwPWs"
 
 app = Client("bot_busqueda_avanzado", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 excel_file = "canales_creados.xlsx"
