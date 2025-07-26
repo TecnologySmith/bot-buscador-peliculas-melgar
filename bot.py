@@ -100,7 +100,8 @@ def enviar_resultados(client, chat_id, user_id):
         texto = (
             f"🎬 {res['nombre']}\n"
             f"🎞️ Género: {res['genero']}\n"
-            f"🗣️ {res['mensaje']}"
+            f"🗣️ {res['mensaje']}\n"
+            f"🔗 {res['enlace']}"
         )
         botones = InlineKeyboardMarkup([
             [InlineKeyboardButton("🎥 Ver Película", url=res['enlace'])]
