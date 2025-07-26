@@ -99,8 +99,8 @@ def enviar_resultados(client, chat_id, user_id):
     for res in paginated:
         texto = (
             f"🎬 {res['nombre']}\n"
-            f"🎞️ Género: {res['genero']}\n"
-            f"🗣️ {res['mensaje']}\n"
+            f"🎞️ Género: {res['genero']}\n\n"
+            f"🗣️ {res['mensaje']}\n\n"
             f"🔗 {res['enlace']}"
         )
         botones = InlineKeyboardMarkup([
