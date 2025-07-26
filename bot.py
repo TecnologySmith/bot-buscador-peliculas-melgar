@@ -4,7 +4,7 @@ from openpyxl import load_workbook
 import os
 import re
 
-# ✅ Usa variables de entorno en lugar de datos sensibles en el código
+# VARIABLES DE ENTORNO
 api_id = int(os.getenv("api_id"))
 api_hash = os.getenv("api_hash")
 bot_token = os.getenv("bot_token")
@@ -56,7 +56,9 @@ def buscar_pelicula(client, message):
             resultados.append({
                 "nombre": nombre,
                 "enlace": enlace,
-                "imagen_url": imagen_url
+                "imagen_url": imagen_url,
+                "genero": genero,
+                "mensaje": mensaje
             })
             encontrados_directos = True
 
@@ -70,7 +72,9 @@ def buscar_pelicula(client, message):
                     resultados.append({
                         "nombre": nombre,
                         "enlace": enlace,
-                        "imagen_url": imagen_url
+                        "imagen_url": imagen_url,
+                        "genero": genero,
+                        "mensaje": mensaje
                     })
 
     if not resultados:
@@ -93,14 +97,18 @@ def enviar_resultados(client, chat_id, user_id):
     paginated = results[index:next_index]
 
     for res in paginated:
-        texto = f"🎬 {res['nombre']}\n🔗 {res['enlace']}"
+        texto = (
+            f"🎬 {res['nombre']}\n"
+            f"🎞️ Género: {res['genero']}\n"
+            f"🗣️ {res['mensaje']}"
+        )
         botones = InlineKeyboardMarkup([
             [InlineKeyboardButton("🎥 Ver Película", url=res['enlace'])]
         ])
         try:
             client.send_photo(chat_id, photo=res['imagen_url'], caption=texto, reply_markup=botones)
         except Exception:
-            client.send_message(chat_id, f"{texto}\n⚠️.")
+            client.send_message(chat_id, f"{texto}\n⚠️.", reply_markup=botones)
 
     user_indexes[user_id] = next_index
 
@@ -113,7 +121,7 @@ def enviar_resultados(client, chat_id, user_id):
         sitio = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌐 Ir al sitio web", url="https://tecnologysmith.github.io/Peliculas_Melgar.html")]
         ])
-        client.send_message(chat_id, "Adquiere un acceso exclusivo a todas las peliculas y series de todas las plataformas de streaming volviendote miembro premium o comprando una pantalla de streaming más información en @mr_smithht o al whatsapp +573222117202 \n\n 🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
+        client.send_message(chat_id, "Adquiere un acceso exclusivo a todas las películas y series de todas las plataformas de streaming volviéndote miembro premium o comprando una pantalla. Más información en @mr_smithht o al WhatsApp +573222117202\n\n🎞️ Encuentra todas las películas en nuestra página:", reply_markup=sitio)
 
 @app.on_callback_query(filters.regex(r"ver_mas_(\d+)"))
 def ver_mas(client, callback_query: CallbackQuery):
