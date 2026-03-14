@@ -5,7 +5,10 @@ from openpyxl import load_workbook
 import unicodedata
 import os
 import random
+from flask import Flask
+from threading import Thread
 
+# ---------- CONFIG ----------
 api_id = 23820344
 api_hash = "df4339ef81253bad2463a65ae5b7b300"
 bot_token = "7394299007:AAFft8frnlrKX_tUGMknwoHdSLoxWKRQvWc"
@@ -13,16 +16,53 @@ bot_token = "7394299007:AAFft8frnlrKX_tUGMknwoHdSLoxWKRQvWc"
 app = Client("bot_peliculas_lista", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 excel_file = "canales_creados.xlsx"
+users_file = "usuarios.txt"
 
 user_results = {}
 user_pages = {}
 
-# ---------- NORMALIZAR TEXTO ----------
+# ---------- SERVIDOR WEB (Render) ----------
+web = Flask('')
+
+@web.route('/')
+def home():
+    return "Bot Peliculas Melgar activo"
+
+def run_web():
+    web.run(host='0.0.0.0', port=10000)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
+
+# ---------- CONTADOR USUARIOS ----------
+def guardar_usuario(user_id):
+
+    if not os.path.exists(users_file):
+        with open(users_file, "w") as f:
+            f.write(str(user_id) + "\n")
+        return
+
+    with open(users_file, "r") as f:
+        usuarios = f.read().splitlines()
+
+    if str(user_id) not in usuarios:
+        with open(users_file, "a") as f:
+            f.write(str(user_id) + "\n")
+
+def contar_usuarios():
+
+    if not os.path.exists(users_file):
+        return 0
+
+    with open(users_file, "r") as f:
+        return len(f.read().splitlines())
+
+# ---------- NORMALIZAR ----------
 def normalizar(texto):
     texto = str(texto).lower()
     texto = unicodedata.normalize('NFD', texto)
     return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
-
 
 # ---------- CARGAR EXCEL ----------
 def cargar_peliculas():
@@ -50,8 +90,7 @@ def cargar_peliculas():
 
     return peliculas
 
-
-# ---------- BOTONES PROMOCION ----------
+# ---------- BOTONES PROMO ----------
 def botones_promocion():
 
     botones = [
@@ -62,7 +101,7 @@ def botones_promocion():
         [InlineKeyboardButton("🚀 TecnologySmith",
         url="https://tecnologysmith.godaddysites.com/")],
 
-        [InlineKeyboardButton("🍿 Compra Netflix, Disney, HBO y más",
+        [InlineKeyboardButton("🍿 Compra Netflix, Disney, HBO",
         url="https://tecnologysmith.github.io/plataformas.html/")],
 
         [InlineKeyboardButton("📥 Descárgalas en Terabox",
@@ -75,7 +114,6 @@ def botones_promocion():
 
     return botones
 
-
 # ---------- MENU ----------
 def menu_principal():
 
@@ -85,17 +123,29 @@ def menu_principal():
 
     return InlineKeyboardMarkup(botones)
 
-
 # ---------- START ----------
 @app.on_message(filters.command("start"))
 def start(client, message):
 
+    if message.from_user:
+        guardar_usuario(message.from_user.id)
+
+    total = contar_usuarios()
+
     message.reply(
-        "🍿 Bienvenido al buscador de películas\n\n"
-        "🔎 Escribe el nombre de una película o género",
+        f"🍿 Bienvenido al buscador de películas\n\n"
+        f"👥 Usuarios usando el bot: {total}\n\n"
+        f"🔎 Escribe el nombre de una película o género",
         reply_markup=menu_principal()
     )
 
+# ---------- COMANDO USUARIOS ----------
+@app.on_message(filters.command("usuarios"))
+def usuarios(client, message):
+
+    total = contar_usuarios()
+
+    message.reply(f"👥 Usuarios registrados en el bot: {total}")
 
 # ---------- MOSTRAR LISTA ----------
 def mostrar_lista(client, chat_id, user_id):
@@ -115,9 +165,7 @@ def mostrar_lista(client, chat_id, user_id):
 
     lote = resultados[inicio:fin]
 
-    texto = ""
-
-    texto += (
+    texto = (
         "🎬 <b>Con @Mr_smithht en Películas Melgar</b>\n"
         "Encontramos estas películas que te pueden gustar:\n\n"
     )
@@ -132,7 +180,7 @@ def mostrar_lista(client, chat_id, user_id):
 
     texto += (
         "🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
-        "❓ Si no encontraste la película que deseas puedes escribir al creador del grupo:\n"
+        "❓ Si no encontraste la película escribe a:\n"
         "@Mr_smithht"
     )
 
@@ -153,35 +201,19 @@ def mostrar_lista(client, chat_id, user_id):
         reply_markup=InlineKeyboardMarkup(teclado)
     )
 
-
-# ---------- MOSTRAR SUGERENCIAS ----------
+# ---------- SUGERENCIAS ----------
 def mostrar_sugerencias(client, chat_id):
 
     peliculas = cargar_peliculas()
 
-    if not peliculas:
-        client.send_message(chat_id, "No hay películas disponibles.")
-        return
-
     sugerencias = random.sample(peliculas, min(10, len(peliculas)))
 
-    texto = (
-        "❌ <b>No encontramos tu película</b>\n\n"
-        "Pero encontramos estas que te pueden gustar:\n\n"
-    )
+    texto = "❌ <b>No encontramos tu película</b>\n\nPero estas te pueden gustar:\n\n"
 
     for i, peli in enumerate(sugerencias, start=1):
         texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
 
-    texto += (
-        "\n\n🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
-        "❓ Si no encontraste la película que deseas puedes escribir al creador del grupo:\n"
-        "@Mr_smithht"
-    )
-
-    botones = [
-        [InlineKeyboardButton("🎲 Otra Aleatoria", callback_data="aleatoria")]
-    ]
+    botones = [[InlineKeyboardButton("🎲 Otra Aleatoria", callback_data="aleatoria")]]
 
     teclado = botones + botones_promocion()
 
@@ -193,10 +225,12 @@ def mostrar_sugerencias(client, chat_id):
         reply_markup=InlineKeyboardMarkup(teclado)
     )
 
-
 # ---------- BUSCADOR ----------
 @app.on_message(filters.text & (filters.private | filters.group))
 def buscador(client, message):
+
+    if message.from_user:
+        guardar_usuario(message.from_user.id)
 
     texto = normalizar(message.text)
 
@@ -231,12 +265,11 @@ def buscador(client, message):
 
     mostrar_lista(client, message.chat.id, user_id)
 
-
-# ---------- SIGUIENTE PAGINA ----------
+# ---------- SIGUIENTE ----------
 @app.on_callback_query(filters.regex("^siguiente$"))
 def siguiente(client, callback_query):
 
-    user_id = callback_query.from_user.id if callback_query.from_user else callback_query.message.chat.id
+    user_id = callback_query.from_user.id
 
     user_pages[user_id] += 1
 
@@ -244,16 +277,11 @@ def siguiente(client, callback_query):
 
     callback_query.answer()
 
-
-# ---------- PELICULA ALEATORIA ----------
+# ---------- ALEATORIA ----------
 @app.on_callback_query(filters.regex("^aleatoria$"))
 def aleatoria(client, callback_query):
 
     peliculas = cargar_peliculas()
-
-    if not peliculas:
-        callback_query.answer("No hay películas.")
-        return
 
     peli = random.choice(peliculas)
 
@@ -268,7 +296,8 @@ def aleatoria(client, callback_query):
 
     callback_query.answer()
 
-
 print("🎬 Bot de películas iniciado correctamente")
+
+keep_alive()
 
 app.run()
