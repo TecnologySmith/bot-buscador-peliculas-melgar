@@ -1,4 +1,5 @@
 pyrogram
 tgcrypto
-openpyxl
 flask
+openpyxl
+requests
