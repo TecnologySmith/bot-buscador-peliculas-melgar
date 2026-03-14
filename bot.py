@@ -9,7 +9,7 @@ import json
 from flask import Flask
 from threading import Thread
 
-# ---------- CONFIG ----------
+# -------- CONFIG --------
 
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
@@ -29,7 +29,7 @@ user_pages = {}
 
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k/gviz/tq?tqx=out:json"
 
-# ---------- SERVIDOR WEB ----------
+# -------- SERVIDOR WEB --------
 
 web = Flask("")
 
@@ -41,15 +41,14 @@ def run_web():
     web.run(host="0.0.0.0", port=10000)
 
 def keep_alive():
-    t = Thread(target=run_web)
-    t.start()
+    Thread(target=run_web).start()
 
-# ---------- USUARIOS ----------
+# -------- USUARIOS --------
 
 def guardar_usuario(user_id):
 
     if not os.path.exists(users_file):
-        with open(users_file, "w") as f:
+        with open(users_file,"w") as f:
             f.write(str(user_id)+"\n")
         return
 
@@ -68,7 +67,7 @@ def contar_usuarios():
     with open(users_file,"r") as f:
         return len(f.read().splitlines())
 
-# ---------- NORMALIZAR ----------
+# -------- NORMALIZAR --------
 
 def normalizar(texto):
 
@@ -79,7 +78,7 @@ def normalizar(texto):
         c for c in texto if unicodedata.category(c)!='Mn'
     )
 
-# ---------- CARGAR PELICULAS ----------
+# -------- CARGAR PELICULAS --------
 
 def cargar_peliculas():
 
@@ -98,7 +97,6 @@ def cargar_peliculas():
 
             nombre=row["c"][0]["v"] if row["c"][0] else ""
             genero=row["c"][2]["v"] if row["c"][2] else ""
-            imagen=row["c"][3]["v"] if row["c"][3] else ""
             enlace=row["c"][6]["v"] if row["c"][6] else ""
 
             if nombre and enlace:
@@ -106,22 +104,20 @@ def cargar_peliculas():
                 peliculas.append({
                     "nombre":str(nombre),
                     "enlace":str(enlace),
-                    "genero":str(genero) if genero else "",
-                    "imagen":str(imagen) if imagen else ""
+                    "genero":str(genero) if genero else ""
                 })
 
         return peliculas
 
     except Exception as e:
-
         print("Error cargando peliculas:",e)
         return []
 
-# ---------- BOTONES PROMO ----------
+# -------- BOTONES PROMO --------
 
 def botones_promocion():
 
-    botones=[
+    return [
 
         [InlineKeyboardButton(
             "🎬 Página Películas Melgar",
@@ -142,22 +138,17 @@ def botones_promocion():
             "📥 Descárgalas en Terabox",
             url="https://1024terabox.com/s/14McCw4X4gtwraY07xGHJ5Q"
         )]
-
     ]
 
-    return botones
-
-# ---------- MENU ----------
+# -------- MENU --------
 
 def menu_principal():
 
-    botones=[
+    return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎲 Película Aleatoria",callback_data="aleatoria")]
-    ]
+    ])
 
-    return InlineKeyboardMarkup(botones)
-
-# ---------- START ----------
+# -------- START --------
 
 @app.on_message(filters.command("start"))
 def start(client,message):
@@ -174,7 +165,7 @@ def start(client,message):
         reply_markup=menu_principal()
     )
 
-# ---------- COMANDO USUARIOS ----------
+# -------- USUARIOS --------
 
 @app.on_message(filters.command("usuarios"))
 def usuarios(client,message):
@@ -183,15 +174,11 @@ def usuarios(client,message):
 
     message.reply(f"👥 Usuarios registrados: {total}")
 
-# ---------- MOSTRAR LISTA ----------
+# -------- MOSTRAR LISTA --------
 
 def mostrar_lista(client,chat_id,user_id):
 
     resultados=user_results.get(user_id,[])
-
-    if not resultados:
-        client.send_message(chat_id,"❌ No hay resultados.")
-        return
 
     pagina=user_pages.get(user_id,0)
 
@@ -203,7 +190,8 @@ def mostrar_lista(client,chat_id,user_id):
     lote=resultados[inicio:fin]
 
     texto=(
-        "🎬 <b>Películas encontradas</b>\n\n"
+        "🎬 <b>Con @Mr_smithht en Películas Melgar</b>\n"
+        "Encontramos estas películas que te pueden gustar:\n\n"
     )
 
     for i,peli in enumerate(lote,start=inicio+1):
@@ -212,7 +200,12 @@ def mostrar_lista(client,chat_id,user_id):
     total_paginas=(len(resultados)+por_pagina-1)//por_pagina
     pagina_actual=pagina+1
 
-    texto+=f"\n📄 Página {pagina_actual}/{total_paginas}\n"
+    texto+=(
+        f"\n📄 Página {pagina_actual}/{total_paginas}\n\n"
+        "🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
+        "❓ Si no encontraste la película que deseas puedes escribir al creador del grupo:\n"
+        "@Mr_smithht"
+    )
 
     botones=[]
 
@@ -235,7 +228,7 @@ def mostrar_lista(client,chat_id,user_id):
         reply_markup=InlineKeyboardMarkup(teclado)
     )
 
-# ---------- SUGERENCIAS ----------
+# -------- SUGERENCIAS --------
 
 def mostrar_sugerencias(client,chat_id):
 
@@ -243,20 +236,25 @@ def mostrar_sugerencias(client,chat_id):
 
     sugerencias=random.sample(peliculas,min(10,len(peliculas)))
 
-    texto="❌ <b>No encontramos tu película</b>\n\n"
-    texto+="Pero encontramos estas que te pueden gustar:\n\n"
+    texto=(
+        "❌ <b>No encontramos tu película</b>\n\n"
+        "Pero encontramos estas que te pueden gustar:\n\n"
+    )
 
     for i,peli in enumerate(sugerencias,start=1):
         texto+=f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
+
+    teclado=botones_promocion()
 
     client.send_message(
         chat_id,
         texto,
         parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup(teclado)
     )
 
-# ---------- BUSCADOR ----------
+# -------- BUSCADOR --------
 
 @app.on_message(filters.text & filters.incoming & ~filters.bot)
 def buscador(client,message):
@@ -297,7 +295,7 @@ def buscador(client,message):
 
     mostrar_lista(client,message.chat.id,user_id)
 
-# ---------- SIGUIENTE ----------
+# -------- SIGUIENTE --------
 
 @app.on_callback_query(filters.regex("^siguiente$"))
 def siguiente(client,callback_query):
@@ -310,7 +308,7 @@ def siguiente(client,callback_query):
 
     callback_query.answer()
 
-# ---------- ALEATORIA ----------
+# -------- ALEATORIA --------
 
 @app.on_callback_query(filters.regex("^aleatoria$"))
 def aleatoria(client,callback_query):
