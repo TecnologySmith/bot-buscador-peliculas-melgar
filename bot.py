@@ -1,33 +1,33 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
-
 import unicodedata
 import os
 import random
-import json
 import requests
-
+import json
 from flask import Flask
 from threading import Thread
-
 
 # ---------- CONFIG ----------
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
 
-app = Client("bot_peliculas_lista", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+app = Client(
+    "bot_peliculas_lista",
+    api_id=api_id,
+    api_hash=api_hash,
+    bot_token=bot_token
+)
 
 users_file = "usuarios.txt"
-busquedas_file = "busquedas.json"
 
 user_results = {}
 user_pages = {}
 
-# GOOGLE SHEETS JSON
+# URL GOOGLE SHEETS
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k/gviz/tq?tqx=out:json"
-
 
 # ---------- SERVIDOR WEB (Render) ----------
 web = Flask('')
@@ -42,7 +42,6 @@ def run_web():
 def keep_alive():
     t = Thread(target=run_web)
     t.start()
-
 
 # ---------- CONTADOR USUARIOS ----------
 def guardar_usuario(user_id):
@@ -68,7 +67,6 @@ def contar_usuarios():
     with open(users_file, "r") as f:
         return len(f.read().splitlines())
 
-
 # ---------- NORMALIZAR ----------
 def normalizar(texto):
 
@@ -76,9 +74,9 @@ def normalizar(texto):
     texto = unicodedata.normalize('NFD', texto)
 
     return ''.join(
-        c for c in texto if unicodedata.category(c) != 'Mn'
+        c for c in texto
+        if unicodedata.category(c) != 'Mn'
     )
-
 
 # ---------- CARGAR PELICULAS DESDE GOOGLE SHEETS ----------
 def cargar_peliculas():
@@ -105,93 +103,62 @@ def cargar_peliculas():
             if nombre and enlace:
 
                 peliculas.append({
-                    "nombre": nombre,
-                    "genero": genero,
-                    "imagen": imagen,
-                    "enlace": enlace
+                    "nombre": str(nombre),
+                    "enlace": str(enlace),
+                    "genero": str(genero) if genero else "",
+                    "imagen": str(imagen) if imagen else ""
                 })
 
         return peliculas
 
     except Exception as e:
 
-        print("Error cargando peliculas:", e)
+        print("Error cargando películas:", e)
 
         return []
-
-
-# ---------- GUARDAR BUSQUEDAS ----------
-def registrar_busqueda(nombre):
-
-    data = {}
-
-    if os.path.exists(busquedas_file):
-
-        with open(busquedas_file) as f:
-            data = json.load(f)
-
-    data[nombre] = data.get(nombre, 0) + 1
-
-    with open(busquedas_file, "w") as f:
-        json.dump(data, f)
-
-
-# ---------- TOP BUSCADAS ----------
-def top_buscadas():
-
-    if not os.path.exists(busquedas_file):
-        return []
-
-    with open(busquedas_file) as f:
-        data = json.load(f)
-
-    ordenadas = sorted(data.items(), key=lambda x: x[1], reverse=True)
-
-    peliculas = cargar_peliculas()
-
-    top = []
-
-    for nombre, _ in ordenadas[:10]:
-
-        for peli in peliculas:
-
-            if peli["nombre"] == nombre:
-                top.append(peli)
-
-    return top
-
 
 # ---------- BOTONES PROMO ----------
 def botones_promocion():
 
     botones = [
 
-        [InlineKeyboardButton("🎬 Página Películas Melgar",
-        url="https://tecnologysmith.github.io/Peliculas_Melgar.html")],
+        [InlineKeyboardButton(
+            "🎬 Página Películas Melgar",
+            url="https://tecnologysmith.github.io/Peliculas_Melgar.html"
+        )],
 
-        [InlineKeyboardButton("🚀 TecnologySmith",
-        url="https://tecnologysmith.godaddysites.com/")],
+        [InlineKeyboardButton(
+            "🚀 TecnologySmith",
+            url="https://tecnologysmith.godaddysites.com/"
+        )],
+
+        [InlineKeyboardButton(
+            "🍿 Compra Netflix, Disney, HBO",
+            url="https://tecnologysmith.github.io/plataformas.html/"
+        )],
+
+        [InlineKeyboardButton(
+            "📥 Descárgalas en Terabox",
+            url="https://1024terabox.com/s/14McCw4X4gtwraY07xGHJ5Q"
+        )],
+
+        [InlineKeyboardButton(
+            "🎁 Sorteos en WhatsApp",
+            url="https://chat.whatsapp.com/GYt7JHkJanz3P4tTkG3T5e"
+        )]
 
     ]
 
     return botones
 
-
 # ---------- MENU ----------
 def menu_principal():
 
     botones = [
-
-        [InlineKeyboardButton("🎲 Película Aleatoria", callback_data="aleatoria")],
-
-        [InlineKeyboardButton("🔥 Más buscadas", callback_data="top")],
-
-        [InlineKeyboardButton("🆕 Recién agregadas", callback_data="recientes")]
-
+        [InlineKeyboardButton("🎲 Película Aleatoria", callback_data="aleatoria")]
     ]
 
     return InlineKeyboardMarkup(botones)
-
 
 # ---------- START ----------
 @app.on_message(filters.command("start"))
@@ -209,6 +176,95 @@ def start(client, message):
         reply_markup=menu_principal()
     )
 
+# ---------- COMANDO USUARIOS ----------
+@app.on_message(filters.command("usuarios"))
+def usuarios(client, message):
+
+    total = contar_usuarios()
+
+    message.reply(f"👥 Usuarios registrados en el bot: {total}")
+
+# ---------- MOSTRAR LISTA ----------
+def mostrar_lista(client, chat_id, user_id):
+
+    resultados = user_results.get(user_id, [])
+
+    if not resultados:
+        client.send_message(chat_id, "❌ No hay resultados.")
+        return
+
+    pagina = user_pages.get(user_id, 0)
+
+    por_pagina = 10
+
+    inicio = pagina * por_pagina
+    fin = inicio + por_pagina
+
+    lote = resultados[inicio:fin]
+
+    texto = (
+        "🎬 <b>Con @Mr_smithht en Películas Melgar</b>\n"
+        "Encontramos estas películas que te pueden gustar:\n\n"
+    )
+
+    for i, peli in enumerate(lote, start=inicio + 1):
+        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
+
+    total_paginas = (len(resultados) + por_pagina - 1) // por_pagina
+    pagina_actual = pagina + 1
+
+    texto += f"\n📄 Página {pagina_actual}/{total_paginas}\n\n"
+
+    texto += (
+        "🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
+        "❓ Si no encontraste la película escribe a:\n"
+        "@Mr_smithht"
+    )
+
+    botones = []
+
+    if fin < len(resultados):
+        botones.append([
+            InlineKeyboardButton("➡ Siguiente", callback_data="siguiente")
+        ])
+
+    botones.append([
+        InlineKeyboardButton("🎲 Aleatoria", callback_data="aleatoria")
+    ])
+
+    teclado = botones + botones_promocion()
+
+    client.send_message(
+        chat_id,
+        texto,
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup(teclado)
+    )
+
+# ---------- SUGERENCIAS ----------
+def mostrar_sugerencias(client, chat_id):
+
+    peliculas = cargar_peliculas()
+
+    sugerencias = random.sample(peliculas, min(10, len(peliculas)))
+
+    texto = "❌ <b>No encontramos tu película</b>\n\nPero estas te pueden gustar:\n\n"
+
+    for i, peli in enumerate(sugerencias, start=1):
+        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
+
+    botones = [[InlineKeyboardButton("🎲 Otra Aleatoria", callback_data="aleatoria")]]
+
+    teclado = botones + botones_promocion()
+
+    client.send_message(
+        chat_id,
+        texto,
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup(teclado)
+    )
 
 # ---------- BUSCADOR ----------
 @app.on_message(filters.text & (filters.private | filters.group))
@@ -235,20 +291,12 @@ def buscador(client, message):
         )
 
         if all(p in contenido for p in palabras):
-
             resultados.append(peli)
-
-            registrar_busqueda(peli["nombre"])
 
     user_id = message.from_user.id if message.from_user else message.chat.id
 
     if not resultados:
-
-        client.send_message(
-            message.chat.id,
-            "❌ No encontramos esa película"
-        )
-
+        mostrar_sugerencias(client, message.chat.id)
         return
 
     random.shuffle(resultados)
@@ -257,45 +305,6 @@ def buscador(client, message):
     user_pages[user_id] = 0
 
     mostrar_lista(client, message.chat.id, user_id)
-
-
-# ---------- MOSTRAR LISTA ----------
-def mostrar_lista(client, chat_id, user_id):
-
-    resultados = user_results.get(user_id, [])
-
-    pagina = user_pages.get(user_id, 0)
-
-    por_pagina = 10
-
-    inicio = pagina * por_pagina
-    fin = inicio + por_pagina
-
-    lote = resultados[inicio:fin]
-
-    texto = "🎬 Películas encontradas\n\n"
-
-    for i, peli in enumerate(lote, start=inicio + 1):
-
-        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
-
-    botones = []
-
-    if fin < len(resultados):
-        botones.append([InlineKeyboardButton("➡ Siguiente", callback_data="siguiente")])
-
-    botones.append([InlineKeyboardButton("🎲 Aleatoria", callback_data="aleatoria")])
-
-    teclado = botones + botones_promocion()
-
-    client.send_message(
-        chat_id,
-        texto,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup(teclado)
-    )
-
 
 # ---------- SIGUIENTE ----------
 @app.on_callback_query(filters.regex("^siguiente$"))
@@ -308,7 +317,6 @@ def siguiente(client, callback_query):
     mostrar_lista(client, callback_query.message.chat.id, user_id)
 
     callback_query.answer()
-
 
 # ---------- ALEATORIA ----------
 @app.on_callback_query(filters.regex("^aleatoria$"))
@@ -323,55 +331,11 @@ def aleatoria(client, callback_query):
     client.send_message(
         callback_query.message.chat.id,
         texto,
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
     )
 
     callback_query.answer()
-
-
-# ---------- TOP BUSCADAS ----------
-@app.on_callback_query(filters.regex("^top$"))
-def top(client, callback_query):
-
-    top = top_buscadas()
-
-    texto = "🔥 Películas más buscadas\n\n"
-
-    for i, peli in enumerate(top, start=1):
-
-        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
-
-    client.send_message(
-        callback_query.message.chat.id,
-        texto,
-        parse_mode=ParseMode.HTML
-    )
-
-    callback_query.answer()
-
-
-# ---------- RECIENTES ----------
-@app.on_callback_query(filters.regex("^recientes$"))
-def recientes(client, callback_query):
-
-    peliculas = cargar_peliculas()
-
-    recientes = peliculas[-10:]
-
-    texto = "🆕 Películas recién agregadas\n\n"
-
-    for i, peli in enumerate(recientes, start=1):
-
-        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
-
-    client.send_message(
-        callback_query.message.chat.id,
-        texto,
-        parse_mode=ParseMode.HTML
-    )
-
-    callback_query.answer()
-
 
 print("🎬 Bot de películas iniciado correctamente")
 
