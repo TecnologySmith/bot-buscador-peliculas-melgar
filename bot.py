@@ -9,9 +9,11 @@ from flask import Flask
 from threading import Thread
 
 # ---------- CONFIG ----------
-api_id = 23820344
-api_hash = "df4339ef81253bad2463a65ae5b7b300"
-bot_token = "7394299007:AAFft8frnlrKX_tUGMknwoHdSLoxWKRQvWc"
+import os
+
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
+bot_token = os.getenv("BOT_TOKEN")
 
 app = Client("bot_peliculas_lista", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
