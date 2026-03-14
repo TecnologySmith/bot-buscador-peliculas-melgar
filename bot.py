@@ -9,7 +9,8 @@ import json
 from flask import Flask
 from threading import Thread
 
-# ---------- CONFIG ----------
+# ---------------- CONFIG ----------------
+
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 bot_token = os.getenv("BOT_TOKEN")
@@ -26,10 +27,11 @@ users_file = "usuarios.txt"
 user_results = {}
 user_pages = {}
 
-# GOOGLE SHEETS JSON
+# URL DE GOOGLE SHEETS
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k/gviz/tq?tqx=out:json"
 
-# ---------- SERVIDOR WEB (Render) ----------
+# ---------------- SERVIDOR WEB ----------------
+
 web = Flask('')
 
 @web.route('/')
@@ -43,7 +45,8 @@ def keep_alive():
     t = Thread(target=run_web)
     t.start()
 
-# ---------- CONTADOR USUARIOS ----------
+# ---------------- USUARIOS ----------------
+
 def guardar_usuario(user_id):
 
     if not os.path.exists(users_file):
@@ -66,7 +69,8 @@ def contar_usuarios():
     with open(users_file, "r") as f:
         return len(f.read().splitlines())
 
-# ---------- NORMALIZAR ----------
+# ---------------- NORMALIZAR TEXTO ----------------
+
 def normalizar(texto):
 
     texto = str(texto).lower()
@@ -76,13 +80,13 @@ def normalizar(texto):
         c for c in texto if unicodedata.category(c) != 'Mn'
     )
 
-# ---------- CARGAR PELICULAS DESDE GOOGLE SHEETS ----------
+# ---------------- CARGAR PELICULAS ----------------
+
 def cargar_peliculas():
 
     try:
 
         r = requests.get(SHEET_URL)
-
         data = r.text
 
         json_data = json.loads(data[47:-2])
@@ -112,10 +116,10 @@ def cargar_peliculas():
     except Exception as e:
 
         print("Error cargando películas:", e)
-
         return []
 
-# ---------- BOTONES PROMO ----------
+# ---------------- BOTONES PROMO ----------------
+
 def botones_promocion():
 
     botones = [
@@ -149,7 +153,8 @@ def botones_promocion():
 
     return botones
 
-# ---------- MENU ----------
+# ---------------- MENU ----------------
+
 def menu_principal():
 
     botones = [
@@ -158,7 +163,8 @@ def menu_principal():
 
     return InlineKeyboardMarkup(botones)
 
-# ---------- START ----------
+# ---------------- START ----------------
+
 @app.on_message(filters.command("start"))
 def start(client, message):
 
@@ -174,7 +180,8 @@ def start(client, message):
         reply_markup=menu_principal()
     )
 
-# ---------- COMANDO USUARIOS ----------
+# ---------------- USUARIOS ----------------
+
 @app.on_message(filters.command("usuarios"))
 def usuarios(client, message):
 
@@ -182,7 +189,8 @@ def usuarios(client, message):
 
     message.reply(f"👥 Usuarios registrados en el bot: {total}")
 
-# ---------- MOSTRAR LISTA ----------
+# ---------------- MOSTRAR LISTA ----------------
+
 def mostrar_lista(client, chat_id, user_id):
 
     resultados = user_results.get(user_id, [])
@@ -214,7 +222,7 @@ def mostrar_lista(client, chat_id, user_id):
     texto += f"\n📄 Página {pagina_actual}/{total_paginas}\n\n"
 
     texto += (
-        "🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
+        "🔎 También puedes buscar por género: acción, terror, comedia\n\n"
         "❓ Si no encontraste la película escribe a:\n"
         "@Mr_smithht"
     )
@@ -240,32 +248,9 @@ def mostrar_lista(client, chat_id, user_id):
         reply_markup=InlineKeyboardMarkup(teclado)
     )
 
-# ---------- SUGERENCIAS ----------
-def mostrar_sugerencias(client, chat_id):
+# ---------------- BUSCADOR ----------------
 
-    peliculas = cargar_peliculas()
-
-    sugerencias = random.sample(peliculas, min(10, len(peliculas)))
-
-    texto = "❌ <b>No encontramos tu película</b>\n\nPero estas te pueden gustar:\n\n"
-
-    for i, peli in enumerate(sugerencias, start=1):
-        texto += f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
-
-    botones = [[InlineKeyboardButton("🎲 Otra Aleatoria", callback_data="aleatoria")]]
-
-    teclado = botones + botones_promocion()
-
-    client.send_message(
-        chat_id,
-        texto,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup(teclado)
-    )
-
-# ---------- BUSCADOR ----------
-@app.on_message(filters.text & filters.incoming & ~filters.bot & ~filters.command)
+@app.on_message(filters.text & filters.incoming & ~filters.bot)
 def buscador(client, message):
 
     if message.from_user:
@@ -294,7 +279,7 @@ def buscador(client, message):
     user_id = message.from_user.id if message.from_user else message.chat.id
 
     if not resultados:
-        mostrar_sugerencias(client, message.chat.id)
+        client.send_message(message.chat.id, "❌ No encontramos esa película.")
         return
 
     random.shuffle(resultados)
@@ -304,7 +289,8 @@ def buscador(client, message):
 
     mostrar_lista(client, message.chat.id, user_id)
 
-# ---------- SIGUIENTE ----------
+# ---------------- PAGINACION ----------------
+
 @app.on_callback_query(filters.regex("^siguiente$"))
 def siguiente(client, callback_query):
 
@@ -316,7 +302,8 @@ def siguiente(client, callback_query):
 
     callback_query.answer()
 
-# ---------- ALEATORIA ----------
+# ---------------- PELICULA ALEATORIA ----------------
+
 @app.on_callback_query(filters.regex("^aleatoria$"))
 def aleatoria(client, callback_query):
 
