@@ -26,7 +26,7 @@ users_file = "usuarios.txt"
 user_results = {}
 user_pages = {}
 
-# URL GOOGLE SHEETS
+# GOOGLE SHEETS JSON
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k/gviz/tq?tqx=out:json"
 
 # ---------- SERVIDOR WEB (Render) ----------
@@ -58,7 +58,6 @@ def guardar_usuario(user_id):
         with open(users_file, "a") as f:
             f.write(str(user_id) + "\n")
 
-
 def contar_usuarios():
 
     if not os.path.exists(users_file):
@@ -74,8 +73,7 @@ def normalizar(texto):
     texto = unicodedata.normalize('NFD', texto)
 
     return ''.join(
-        c for c in texto
-        if unicodedata.category(c) != 'Mn'
+        c for c in texto if unicodedata.category(c) != 'Mn'
     )
 
 # ---------- CARGAR PELICULAS DESDE GOOGLE SHEETS ----------
@@ -267,7 +265,7 @@ def mostrar_sugerencias(client, chat_id):
     )
 
 # ---------- BUSCADOR ----------
-@app.on_message(filters.text & (filters.private | filters.group))
+@app.on_message(filters.text & filters.incoming & ~filters.bot & ~filters.command)
 def buscador(client, message):
 
     if message.from_user:
