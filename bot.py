@@ -237,8 +237,8 @@ def mostrar_sugerencias(client,chat_id):
     sugerencias=random.sample(peliculas,min(10,len(peliculas)))
 
     texto=(
-        "❌ <b>No encontramos tu película</b>\n\n"
-        "Pero encontramos estas que te pueden gustar:\n\n"
+        "☺️ <b>Encontramos estas película para ti</b>\n\n"
+        "Tal vez te pueden gustar:\n\n"
     )
 
     for i,peli in enumerate(sugerencias,start=1):
