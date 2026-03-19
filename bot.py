@@ -96,8 +96,8 @@ def cargar_peliculas():
         for row in rows:
 
             nombre=row["c"][0]["v"] if row["c"][0] else ""
+            enlace=row["c"][1]["v"] if row["c"][1] else ""
             genero=row["c"][2]["v"] if row["c"][2] else ""
-            enlace=row["c"][6]["v"] if row["c"][6] else ""
 
             if nombre and enlace:
 
