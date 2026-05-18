@@ -27,7 +27,7 @@ users_file = "usuarios.txt"
 user_results = {}
 user_pages = {}
 
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1_cQK1aAJh7LWCubb_9IUnBQvieHUA-0k/gviz/tq?tqx=out:json"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1wXvXslnUlQPLhmbiLTQ4X2G2JeaPmN648p1ng9125KM/gviz/tq?tqx=out:json"
 
 # -------- SERVIDOR WEB --------
 
