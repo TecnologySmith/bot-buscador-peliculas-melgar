@@ -119,33 +119,6 @@ def cargar_peliculas():
         print("Error cargando peliculas:", e)
         return []
 
-# -------- BOTONES PROMO --------
-
-def botones_promocion():
-
-    return [
-
-        [InlineKeyboardButton(
-            "🎬 Página Películas Melgar",
-            url="https://tecnologysmith.github.io/Peliculas_Melgar.html"
-        )],
-
-        [InlineKeyboardButton(
-            "🚀 TecnologySmith",
-            url="https://tecnologysmith.godaddysites.com/"
-        )],
-
-        [InlineKeyboardButton(
-            "🍿 Compra Netflix, Disney, HBO",
-            url="https://tecnologysmith.github.io/plataformas.html/"
-        )],
-
-        [InlineKeyboardButton(
-            "📥 Descárgalas en Terabox",
-            url="https://1024terabox.com/s/14McCw4X4gtwraY07xGHJ5Q"
-        )]
-    ]
-
 # -------- MENU --------
 
 def menu_principal():
@@ -204,11 +177,19 @@ def mostrar_lista(client, chat_id, user_id):
             f"📺 {peli['nombre']}\n"
             f"🎭 Género: {peli['genero']}\n"
             f"📝 {peli['sinopsis']}\n\n"
-            f"🔗 Ver película: {peli['enlace']}\n\n"
             f"Tutorial de como ver y descargar por Terabox\n"
             f"https://t.me/peliculasmelgar3/2556/2610\n\n"
             f"{peli['publicidad']}"
         )
+
+        botones_pelicula = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                    url=peli["enlace"]
+                )
+            ]
+        ])
 
         try:
 
@@ -217,7 +198,7 @@ def mostrar_lista(client, chat_id, user_id):
                 photo=peli["imagen"],
                 caption=texto,
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(botones_promocion())
+                reply_markup=botones_pelicula
             )
 
         except Exception as e:
@@ -229,7 +210,7 @@ def mostrar_lista(client, chat_id, user_id):
                 texto,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(botones_promocion())
+                reply_markup=botones_pelicula
             )
 
     botones = []
@@ -263,11 +244,19 @@ def mostrar_sugerencias(client, chat_id):
             f"📺 {peli['nombre']}\n"
             f"🎭 Género: {peli['genero']}\n"
             f"📝 {peli['sinopsis']}\n\n"
-            f"🔗 Ver película: {peli['enlace']}\n\n"
             f"Tutorial de como ver y descargar por Terabox\n"
             f"https://t.me/peliculasmelgar3/2556/2610\n\n"
             f"{peli['publicidad']}"
         )
+
+        botones_pelicula = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                    url=peli["enlace"]
+                )
+            ]
+        ])
 
         try:
 
@@ -276,7 +265,7 @@ def mostrar_sugerencias(client, chat_id):
                 photo=peli["imagen"],
                 caption=texto,
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(botones_promocion())
+                reply_markup=botones_pelicula
             )
 
         except Exception as e:
@@ -288,7 +277,7 @@ def mostrar_sugerencias(client, chat_id):
                 texto,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(botones_promocion())
+                reply_markup=botones_pelicula
             )
 
 # -------- BUSCADOR --------
@@ -358,11 +347,19 @@ def aleatoria(client, callback_query):
         f"📺 {peli['nombre']}\n"
         f"🎭 Género: {peli['genero']}\n"
         f"📝 {peli['sinopsis']}\n\n"
-        f"🔗 Ver película: {peli['enlace']}\n\n"
         f"Tutorial de como ver y descargar por Terabox\n"
         f"https://t.me/peliculasmelgar3/2556/2610\n\n"
         f"{peli['publicidad']}"
     )
+
+    botones_pelicula = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                url=peli["enlace"]
+            )
+        ]
+    ])
 
     try:
 
@@ -371,7 +368,7 @@ def aleatoria(client, callback_query):
             photo=peli["imagen"],
             caption=texto,
             parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(botones_promocion())
+            reply_markup=botones_pelicula
         )
 
     except Exception as e:
@@ -383,7 +380,7 @@ def aleatoria(client, callback_query):
             texto,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
-            reply_markup=InlineKeyboardMarkup(botones_promocion())
+            reply_markup=botones_pelicula
         )
 
     callback_query.answer()
