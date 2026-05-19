@@ -48,34 +48,34 @@ def keep_alive():
 def guardar_usuario(user_id):
 
     if not os.path.exists(users_file):
-        with open(users_file,"w") as f:
-            f.write(str(user_id)+"\n")
+        with open(users_file, "w") as f:
+            f.write(str(user_id) + "\n")
         return
 
-    with open(users_file,"r") as f:
-        usuarios=f.read().splitlines()
+    with open(users_file, "r") as f:
+        usuarios = f.read().splitlines()
 
     if str(user_id) not in usuarios:
-        with open(users_file,"a") as f:
-            f.write(str(user_id)+"\n")
+        with open(users_file, "a") as f:
+            f.write(str(user_id) + "\n")
 
 def contar_usuarios():
 
     if not os.path.exists(users_file):
         return 0
 
-    with open(users_file,"r") as f:
+    with open(users_file, "r") as f:
         return len(f.read().splitlines())
 
 # -------- NORMALIZAR --------
 
 def normalizar(texto):
 
-    texto=str(texto).lower()
-    texto=unicodedata.normalize('NFD',texto)
+    texto = str(texto).lower()
+    texto = unicodedata.normalize('NFD', texto)
 
     return ''.join(
-        c for c in texto if unicodedata.category(c)!='Mn'
+        c for c in texto if unicodedata.category(c) != 'Mn'
     )
 
 # -------- CARGAR PELICULAS --------
@@ -84,33 +84,39 @@ def cargar_peliculas():
 
     try:
 
-        r=requests.get(SHEET_URL)
-        data=r.text
+        r = requests.get(SHEET_URL)
+        data = r.text
 
-        json_data=json.loads(data[47:-2])
+        json_data = json.loads(data[47:-2])
 
-        rows=json_data["table"]["rows"]
+        rows = json_data["table"]["rows"]
 
-        peliculas=[]
+        peliculas = []
 
         for row in rows:
 
-            nombre=row["c"][0]["v"] if row["c"][0] else ""
-            enlace=row["c"][1]["v"] if row["c"][1] else ""
-            genero=row["c"][2]["v"] if row["c"][2] else ""
+            nombre = row["c"][0]["v"] if row["c"][0] else ""
+            enlace = row["c"][1]["v"] if row["c"][1] else ""
+            genero = row["c"][2]["v"] if row["c"][2] else ""
+            imagen = row["c"][3]["v"] if row["c"][3] else ""
+            publicidad = row["c"][4]["v"] if row["c"][4] else ""
+            sinopsis = row["c"][5]["v"] if row["c"][5] else ""
 
             if nombre and enlace:
 
                 peliculas.append({
-                    "nombre":str(nombre),
-                    "enlace":str(enlace),
-                    "genero":str(genero) if genero else ""
+                    "nombre": str(nombre),
+                    "enlace": str(enlace),
+                    "genero": str(genero),
+                    "imagen": str(imagen),
+                    "publicidad": str(publicidad),
+                    "sinopsis": str(sinopsis)
                 })
 
         return peliculas
 
     except Exception as e:
-        print("Error cargando peliculas:",e)
+        print("Error cargando peliculas:", e)
         return []
 
 # -------- BOTONES PROMO --------
@@ -145,18 +151,18 @@ def botones_promocion():
 def menu_principal():
 
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎲 Película Aleatoria",callback_data="aleatoria")]
+        [InlineKeyboardButton("🎲 Película Aleatoria", callback_data="aleatoria")]
     ])
 
 # -------- START --------
 
 @app.on_message(filters.command("start"))
-def start(client,message):
+def start(client, message):
 
     if message.from_user:
         guardar_usuario(message.from_user.id)
 
-    total=contar_usuarios()
+    total = contar_usuarios()
 
     message.reply(
         f"🍿 Bienvenido al buscador de películas\n\n"
@@ -168,163 +174,217 @@ def start(client,message):
 # -------- USUARIOS --------
 
 @app.on_message(filters.command("usuarios"))
-def usuarios(client,message):
+def usuarios(client, message):
 
-    total=contar_usuarios()
+    total = contar_usuarios()
 
     message.reply(f"👥 Usuarios registrados: {total}")
 
 # -------- MOSTRAR LISTA --------
 
-def mostrar_lista(client,chat_id,user_id):
+def mostrar_lista(client, chat_id, user_id):
 
-    resultados=user_results.get(user_id,[])
+    resultados = user_results.get(user_id, [])
 
-    pagina=user_pages.get(user_id,0)
+    pagina = user_pages.get(user_id, 0)
 
-    por_pagina=10
+    por_pagina = 10
 
-    inicio=pagina*por_pagina
-    fin=inicio+por_pagina
+    inicio = pagina * por_pagina
+    fin = inicio + por_pagina
 
-    lote=resultados[inicio:fin]
+    lote = resultados[inicio:fin]
 
-    texto=(
-        "🎬 <b>Con @Mr_smithht en Películas Melgar</b>\n"
-        "Encontramos estas películas que te pueden gustar:\n\n"
-    )
+    total_paginas = (len(resultados) + por_pagina - 1) // por_pagina
+    pagina_actual = pagina + 1
 
-    for i,peli in enumerate(lote,start=inicio+1):
-        texto+=f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
+    for peli in lote:
 
-    total_paginas=(len(resultados)+por_pagina-1)//por_pagina
-    pagina_actual=pagina+1
+        texto = (
+            f"📺 {peli['nombre']}\n"
+            f"🎭 Género: {peli['genero']}\n"
+            f"📝 {peli['sinopsis']}\n\n"
+            f"🔗 Ver película: {peli['enlace']}\n\n"
+            f"Tutorial de como ver y descargar por Terabox\n"
+            f"https://t.me/peliculasmelgar3/2556/2610\n\n"
+            f"{peli['publicidad']}"
+        )
 
-    texto+=(
-        f"\n📄 Página {pagina_actual}/{total_paginas}\n\n"
-        "🔎 También puedes buscar por género: acción, terror, comedia, etc.\n\n"
-        "❓ Si no encontraste la película que deseas puedes escribir al creador del grupo:\n"
-        "@Mr_smithht"
-    )
+        try:
 
-    botones=[]
+            client.send_photo(
+                chat_id,
+                photo=peli["imagen"],
+                caption=texto,
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(botones_promocion())
+            )
 
-    if fin<len(resultados):
+        except Exception as e:
+
+            print("Error enviando imagen:", e)
+
+            client.send_message(
+                chat_id,
+                texto,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup(botones_promocion())
+            )
+
+    botones = []
+
+    if fin < len(resultados):
         botones.append([
-            InlineKeyboardButton("➡ Siguiente",callback_data="siguiente")
+            InlineKeyboardButton("➡ Siguiente", callback_data="siguiente")
         ])
 
     botones.append([
-        InlineKeyboardButton("🎲 Aleatoria",callback_data="aleatoria")
+        InlineKeyboardButton("🎲 Aleatoria", callback_data="aleatoria")
     ])
-
-    teclado=botones+botones_promocion()
 
     client.send_message(
         chat_id,
-        texto,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup(teclado)
+        f"📄 Página {pagina_actual}/{total_paginas}",
+        reply_markup=InlineKeyboardMarkup(botones)
     )
 
 # -------- SUGERENCIAS --------
 
-def mostrar_sugerencias(client,chat_id):
+def mostrar_sugerencias(client, chat_id):
 
-    peliculas=cargar_peliculas()
+    peliculas = cargar_peliculas()
 
-    sugerencias=random.sample(peliculas,min(10,len(peliculas)))
+    sugerencias = random.sample(peliculas, min(10, len(peliculas)))
 
-    texto=(
-        "☺️ <b>Encontramos estas película para ti</b>\n\n"
-        "Tal vez te pueden gustar:\n\n"
-    )
+    for peli in sugerencias:
 
-    for i,peli in enumerate(sugerencias,start=1):
-        texto+=f'{i}. <a href="{peli["enlace"]}">{peli["nombre"]}</a>\n'
+        texto = (
+            f"📺 {peli['nombre']}\n"
+            f"🎭 Género: {peli['genero']}\n"
+            f"📝 {peli['sinopsis']}\n\n"
+            f"🔗 Ver película: {peli['enlace']}\n\n"
+            f"Tutorial de como ver y descargar por Terabox\n"
+            f"https://t.me/peliculasmelgar3/2556/2610\n\n"
+            f"{peli['publicidad']}"
+        )
 
-    teclado=botones_promocion()
+        try:
 
-    client.send_message(
-        chat_id,
-        texto,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup(teclado)
-    )
+            client.send_photo(
+                chat_id,
+                photo=peli["imagen"],
+                caption=texto,
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(botones_promocion())
+            )
+
+        except Exception as e:
+
+            print("Error enviando sugerencia:", e)
+
+            client.send_message(
+                chat_id,
+                texto,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup(botones_promocion())
+            )
 
 # -------- BUSCADOR --------
 
 @app.on_message(filters.text & filters.incoming & ~filters.bot)
-def buscador(client,message):
+def buscador(client, message):
 
     if message.from_user:
         guardar_usuario(message.from_user.id)
 
-    texto=normalizar(message.text)
+    texto = normalizar(message.text)
 
-    if len(texto)<3:
+    if len(texto) < 3:
         return
 
-    peliculas=cargar_peliculas()
+    peliculas = cargar_peliculas()
 
-    palabras=texto.split()
+    palabras = texto.split()
 
-    resultados=[]
+    resultados = []
 
     for peli in peliculas:
 
-        contenido=normalizar(
+        contenido = normalizar(
             f"{peli['nombre']} {peli['genero']}"
         )
 
         if all(p in contenido for p in palabras):
             resultados.append(peli)
 
-    user_id=message.from_user.id if message.from_user else message.chat.id
+    user_id = message.from_user.id if message.from_user else message.chat.id
 
     if not resultados:
-        mostrar_sugerencias(client,message.chat.id)
+        mostrar_sugerencias(client, message.chat.id)
         return
 
     random.shuffle(resultados)
 
-    user_results[user_id]=resultados
-    user_pages[user_id]=0
+    user_results[user_id] = resultados
+    user_pages[user_id] = 0
 
-    mostrar_lista(client,message.chat.id,user_id)
+    mostrar_lista(client, message.chat.id, user_id)
 
 # -------- SIGUIENTE --------
 
 @app.on_callback_query(filters.regex("^siguiente$"))
-def siguiente(client,callback_query):
+def siguiente(client, callback_query):
 
-    user_id=callback_query.from_user.id
+    user_id = callback_query.from_user.id
 
-    user_pages[user_id]+=1
+    user_pages[user_id] += 1
 
-    mostrar_lista(client,callback_query.message.chat.id,user_id)
+    mostrar_lista(client, callback_query.message.chat.id, user_id)
 
     callback_query.answer()
 
 # -------- ALEATORIA --------
 
 @app.on_callback_query(filters.regex("^aleatoria$"))
-def aleatoria(client,callback_query):
+def aleatoria(client, callback_query):
 
-    peliculas=cargar_peliculas()
+    peliculas = cargar_peliculas()
 
-    peli=random.choice(peliculas)
+    peli = random.choice(peliculas)
 
-    texto=f'🎬 <a href="{peli["enlace"]}">{peli["nombre"]}</a>'
-
-    client.send_message(
-        callback_query.message.chat.id,
-        texto,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True
+    texto = (
+        f"📺 {peli['nombre']}\n"
+        f"🎭 Género: {peli['genero']}\n"
+        f"📝 {peli['sinopsis']}\n\n"
+        f"🔗 Ver película: {peli['enlace']}\n\n"
+        f"Tutorial de como ver y descargar por Terabox\n"
+        f"https://t.me/peliculasmelgar3/2556/2610\n\n"
+        f"{peli['publicidad']}"
     )
+
+    try:
+
+        client.send_photo(
+            callback_query.message.chat.id,
+            photo=peli["imagen"],
+            caption=texto,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(botones_promocion())
+        )
+
+    except Exception as e:
+
+        print("Error enviando aleatoria:", e)
+
+        client.send_message(
+            callback_query.message.chat.id,
+            texto,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+            reply_markup=InlineKeyboardMarkup(botones_promocion())
+        )
 
     callback_query.answer()
 
