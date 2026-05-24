@@ -185,7 +185,7 @@ def mostrar_lista(client, chat_id, user_id):
         botones_pelicula = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                    "🎬 ÚNETE PARA VER LA PELÍ",
                     url=peli["enlace"]
                 )
             ]
@@ -252,7 +252,7 @@ def mostrar_sugerencias(client, chat_id):
         botones_pelicula = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                    "🎬 ÚNETE PARA VER LA PELI",
                     url=peli["enlace"]
                 )
             ]
@@ -355,7 +355,7 @@ def aleatoria(client, callback_query):
     botones_pelicula = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "🎬 ÚNETE AL CANAL PARA VER LA PELÍCULA",
+                "🎬 ÚNETE PARA VER LA PELI",
                 url=peli["enlace"]
             )
         ]
