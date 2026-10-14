@@ -188,7 +188,7 @@ def mostrar_lista(client, chat_id, user_id):
             [
                 InlineKeyboardButton(
                     "🎬 ÚNETE PARA VER LA PELÍ",
-                    url=peli["link"]
+                    url=peli["enlace"]
                 )
             ]
         ])
