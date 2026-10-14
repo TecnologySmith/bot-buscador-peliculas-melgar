@@ -78,6 +78,15 @@ def normalizar(texto):
         c for c in texto if unicodedata.category(c) != 'Mn'
     )
 
+# -------- LINK DIRECTO --------
+
+from urllib.parse import quote
+import re
+
+def link_pelicula(nombre):
+    slug = re.sub(r"\s+", "-", str(nombre).strip().lower())
+    return "https://tecnologysmith.github.io/Peliculas_Melgar.html/" + quote(slug, safe="-")
+
 # -------- CARGAR PELICULAS --------
 
 def cargar_peliculas():
@@ -103,11 +112,11 @@ def cargar_peliculas():
             sinopsis = row["c"][5]["v"] if row["c"][5] else ""
             link = row["c"][7]["v"] if row["c"][7] else ""
 
-            if nombre and enlace:
+            if nombre:
 
                 peliculas.append({
                     "nombre": str(nombre),
-                    "enlace": str(enlace),
+                    "enlace": link_pelicula(nombre),
                     "genero": str(genero),
                     "imagen": str(imagen),
                     "publicidad": str(publicidad),
@@ -187,7 +196,7 @@ def mostrar_lista(client, chat_id, user_id):
         botones_pelicula = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "🎬 ÚNETE PARA VER LA PELÍ",
+                    "🎬 VER PELÍCULA",
                     url=peli["enlace"]
                 )
             ]
@@ -254,7 +263,7 @@ def mostrar_sugerencias(client, chat_id):
         botones_pelicula = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "🎬 ÚNETE PARA VER LA PELI",
+                    "🎬 VER PELÍCULA",
                     url=peli["enlace"]
                 )
             ]
@@ -357,7 +366,7 @@ def aleatoria(client, callback_query):
     botones_pelicula = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "🎬 ÚNETE PARA VER LA PELI",
+                "🎬 VER PELÍCULA",
                 url=peli["enlace"]
             )
         ]
