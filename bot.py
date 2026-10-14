@@ -101,6 +101,7 @@ def cargar_peliculas():
             imagen = row["c"][3]["v"] if row["c"][3] else ""
             publicidad = row["c"][4]["v"] if row["c"][4] else ""
             sinopsis = row["c"][5]["v"] if row["c"][5] else ""
+            link = row["c"][7]["v"] if row["c"][7] else ""
 
             if nombre and enlace:
 
@@ -110,7 +111,8 @@ def cargar_peliculas():
                     "genero": str(genero),
                     "imagen": str(imagen),
                     "publicidad": str(publicidad),
-                    "sinopsis": str(sinopsis)
+                    "sinopsis": str(sinopsis),
+                    "link": str(link)
                 })
 
         return peliculas
@@ -186,7 +188,7 @@ def mostrar_lista(client, chat_id, user_id):
             [
                 InlineKeyboardButton(
                     "🎬 ÚNETE PARA VER LA PELÍ",
-                    url=peli["enlace"]
+                    url=peli["link"]
                 )
             ]
         ])
